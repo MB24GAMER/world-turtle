@@ -9,7 +9,7 @@
   <style>
     body {
       font-family: 'Baloo 2', Arial, sans-serif;
-      background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+      background: linear-gradient(135deg, #b2f7cc 0%, #5ec576 100%);
       min-height: 100vh;
       margin: 0;
       display: flex;
@@ -18,7 +18,7 @@
       justify-content: center;
     }
     .container {
-      background: rgba(255,255,255,0.95);
+      background: linear-gradient(135deg, #b2f7cc 0%, #5ec576 100%);
       border-radius: 24px;
       box-shadow: 0 8px 32px rgba(44, 62, 80, 0.15);
       padding: 40px 32px 32px 32px;
@@ -46,7 +46,7 @@
       margin-bottom: 24px;
       font-size: 1.1rem;
     }
-    .coins {
+    .fragments {
       font-size: 2.2rem;
       margin-bottom: 20px;
       color: #2e8b57;
@@ -192,6 +192,10 @@
     .nav-btn.nav-active .nav-icon, .nav-btn:active .nav-icon {
       filter: drop-shadow(0 0 4px #a8edea);
     }
+    .highlight-lb {
+      box-shadow: 0 0 0 4px #ffd600, 0 2px 8px rgba(44,62,80,0.07);
+      transition: box-shadow 0.3s;
+    }
     @media (max-width: 400px) {
       .container { padding: 24px 8px; }
       .click-btn, .upgrade { font-size: 1rem; padding: 12px 16px; }
@@ -203,20 +207,30 @@
 </head>
 <body>
   <div class="container">
-    <div id="section-tap">
-      <div class="mascot">🐢</div>
+    <div id="section-tap" style="position:relative;">
+      <button id="leaderboard-btn" aria-label="Show Leaderboard" style="position:absolute; top:16px; right:16px; background:#e0f7fa; border:none; border-radius:50%; width:40px; height:40px; box-shadow:0 2px 8px rgba(44,62,80,0.10); font-size:1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:2;">
+        🏆
+      </button>
       <h1>World Turtle</h1>
-      <div class="subtitle">Tap the turtle to earn coins and upgrade your world!</div>
-      <div class="coins" id="coins">Coins: 0</div>
-      <button class="tap-img-btn" onclick="earnCoins()" aria-label="Tap to earn coins">
-        <img src="world-turtle-coin.png" alt="World Turtle Coin" class="coin-img" />
+      <div class="subtitle">Tap the turtle to earn fragments and upgrade your world!</div>
+      <div class="fragments" id="fragments">Fragments: 0</div>
+      <div id="level-info" style="margin-bottom: 16px;"></div>
+      <div id="level-progress-container" style="width: 100%; background: #e0e0e0; border-radius: 8px; height: 18px; margin-bottom: 18px; display: none;">
+        <div id="level-progress" style="height: 100%; background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%); border-radius: 8px; width: 0%; transition: width 0.3s;"></div>
+      </div>
+      <button class="tap-img-btn" onclick="earnFragments()" aria-label="Tap to earn fragments">
+        <img src="world-turtle-coin.png" alt="World Turtle Fragment" class="coin-img" />
       </button>
       <button class="upgrade" onclick="buyUpgrade()">Upgrade (+1 per tap) - Cost: <span id="upgrade-cost">10</span></button>
-      <div class="upgrade-info">Current Power: <span id="power">1</span> coins/tap</div>
+      <div class="upgrade-info">Current Power: <span id="power">1</span> fragments/tap</div>
+      <!-- Leaderboard card removed from here -->
     </div>
-    <div id="section-leaderboard" style="display:none;">
-      <h2 style="color:#2e8b57;">Leaderboard (Local)</h2>
-      <ol id="leaderboard" style="text-align:left; margin:0; padding-left:20px; color:#333; font-size:1rem;"></ol>
+    <div id="leaderboard-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(255,255,255,0.98); z-index:999; align-items:center; justify-content:center; flex-direction:column;">
+      <button id="close-leaderboard" aria-label="Close Leaderboard" style="position:absolute; top:24px; right:24px; background:#e57373; border:none; border-radius:50%; width:40px; height:40px; box-shadow:0 2px 8px rgba(44,62,80,0.10); font-size:1.4rem; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:1000;">✖</button>
+      <div class="card" style="max-width:400px; width:90vw; margin:0 auto; padding:28px 18px; background:#e0f7fa; border-radius:20px; box-shadow:0 2px 16px rgba(44,62,80,0.13);">
+        <h2 style="margin:0 0 10px 0; color:#00796b; font-size:1.5rem; text-align:center;">Leaderboard (Local)</h2>
+        <ol id="leaderboard-overlay-list" style="text-align:left; margin:0; padding-left:20px; color:#333; font-size:1.1rem;"></ol>
+      </div>
     </div>
     <div id="section-refer" style="display:none;">
       <h2 style="color:#e65100;">Refer and Earn</h2>
@@ -231,15 +245,42 @@
       <h2 style="color:#388e3c;">Tasks</h2>
       <p>Complete daily tasks for extra rewards! (Coming soon)</p>
     </div>
+    <div id="section-converter" style="display:none;">
+      <h2 style="color:#1976d2;">Converter</h2>
+      <p>Convert your fragments to gems! (100 fragments = 1 gem)</p>
+      <div style="margin: 16px 0;">
+        <input id="convert-amount" type="number" min="100" step="100" placeholder="Enter fragments" style="width: 60%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;" />
+        <button onclick="convertFragments()" style="margin-left: 8px; padding: 8px 16px; border-radius: 8px; border: none; background: #1976d2; color: #fff; font-size: 1rem; cursor: pointer;">Convert</button>
+      </div>
+      <div id="convert-result" style="color: #1976d2; font-size: 1rem; min-height: 1.5em;"></div>
+      <div style="margin-top: 10px; color: #888; font-size: 0.95rem;">You have <span id="gems">0</span> gems.</div>
+    </div>
+    <div id="section-shop" style="display:none;">
+      <h2 style="color:#4caf50;">Shop</h2>
+      <div style="margin: 18px 0;">
+        <div style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(44,62,80,0.07); display:flex; align-items:center; justify-content:space-between;">
+          <span>Buy 1,000 Fragments</span>
+          <button style="background:#43e97b; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:1rem; cursor:pointer;">Buy</button>
+        </div>
+        <div style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(44,62,80,0.07); display:flex; align-items:center; justify-content:space-between;">
+          <span>Buy 1 Gem</span>
+          <button style="background:#1976d2; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:1rem; cursor:pointer;">Buy</button>
+        </div>
+        <div style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(44,62,80,0.07); display:flex; align-items:center; justify-content:space-between;">
+          <span>Buy 10 Gems</span>
+          <button style="background:#1976d2; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:1rem; cursor:pointer;">Buy</button>
+        </div>
+      </div>
+    </div>
   </div>
   <nav class="bottom-nav">
     <button class="nav-btn nav-active" id="nav-tap" aria-label="Tap">
       <span class="nav-icon"><img src="world-turtle-coin.png" alt="Tap" class="nav-coin" /></span>
       <span class="nav-label">Tap</span>
     </button>
-    <button class="nav-btn" id="nav-leaderboard" aria-label="Leaderboard">
-      <span class="nav-icon">🏆</span>
-      <span class="nav-label">Leaderboard</span>
+    <button class="nav-btn" id="nav-shop" aria-label="Shop">
+      <span class="nav-icon">🛒</span>
+      <span class="nav-label">Shop</span>
     </button>
     <button class="nav-btn" id="nav-refer" aria-label="Refer & Earn">
       <span class="nav-icon">🤝</span>
@@ -249,102 +290,184 @@
       <span class="nav-icon">📝</span>
       <span class="nav-label">Tasks</span>
     </button>
+    <button class="nav-btn" id="nav-converter" aria-label="Converter">
+      <span class="nav-icon">💎</span>
+      <span class="nav-label">Converter</span>
+    </button>
   </nav>
   <script>
-    // Telegram WebApp API init
-    const tg = window.Telegram?.WebApp;
-    if (tg) tg.ready();
+    document.addEventListener('DOMContentLoaded', function() {
+      // Telegram WebApp API init
+      const tg = window.Telegram?.WebApp;
+      if (tg) tg.ready();
 
-    // Game state
-    let coins = parseInt(localStorage.getItem('coins') || '0');
-    let power = parseInt(localStorage.getItem('power') || '1');
-    let upgradeCost = parseInt(localStorage.getItem('upgradeCost') || '10');
+      // Game state
+      let fragments = parseInt(localStorage.getItem('fragments') || '0');
+      let power = parseInt(localStorage.getItem('power') || '1');
+      let upgradeCost = parseInt(localStorage.getItem('upgradeCost') || '10');
+      let gems = parseInt(localStorage.getItem('gems') || '0');
 
-    function updateUI() {
-      document.getElementById('coins').textContent = `Coins: ${coins}`;
-      document.getElementById('power').textContent = power;
-      document.getElementById('upgrade-cost').textContent = upgradeCost;
-    }
-
-    // Local leaderboard logic
-    function updateLeaderboard() {
-      let scores = JSON.parse(localStorage.getItem('localLeaderboard') || '[]');
-      // Add/update current user
-      const username = 'You';
-      const existing = scores.find(s => s.username === username);
-      if (existing) {
-        existing.score = coins;
-      } else {
-        scores.push({ username, score: coins });
+      function updateUI() {
+        document.getElementById('fragments').textContent = `Fragments: ${fragments}`;
+        document.getElementById('power').textContent = power;
+        document.getElementById('upgrade-cost').textContent = upgradeCost;
+        document.getElementById('gems').textContent = gems;
+        // Level logic
+        let level = 0;
+        let req = 10000;
+        let nextReq = req;
+        let f = fragments;
+        while (f >= req) {
+          level++;
+          f -= req;
+          req *= 10;
+          nextReq = req;
+        }
+        document.getElementById('level-info').innerHTML = `Level: <b>${level}</b> &nbsp; | &nbsp; Next: <b>${nextReq - f}</b> fragments`;
+        // Progress bar
+        const progress = Math.min(1, f / nextReq);
+        document.getElementById('level-progress').style.width = (progress * 100) + '%';
+        document.getElementById('level-progress-container').style.display = 'block';
       }
-      // Sort and keep top 10
-      scores.sort((a, b) => b.score - a.score);
-      scores = scores.slice(0, 10);
-      localStorage.setItem('localLeaderboard', JSON.stringify(scores));
-      // Render
-      const lb = document.getElementById('leaderboard');
-      lb.innerHTML = '';
-      scores.forEach((s, i) => {
-        lb.innerHTML += `<li>${s.username}: ${s.score}</li>`;
-      });
-    }
 
-    function earnCoins() {
-      coins += power;
-      localStorage.setItem('coins', coins);
-      updateUI();
-      updateLeaderboard();
-    }
+      // Local leaderboard logic
+      function updateLeaderboard() {
+        let scores = JSON.parse(localStorage.getItem('localLeaderboard') || '[]');
+        // Add/update current user
+        const username = 'You';
+        const existing = scores.find(s => s.username === username);
+        if (existing) {
+          existing.score = fragments;
+        } else {
+          scores.push({ username, score: fragments });
+        }
+        // Sort and keep top 10
+        scores.sort((a, b) => b.score - a.score);
+        scores = scores.slice(0, 10);
+        localStorage.setItem('localLeaderboard', JSON.stringify(scores));
+      }
 
-    function buyUpgrade() {
-      if (coins >= upgradeCost) {
-        coins -= upgradeCost;
-        power += 1;
-        upgradeCost = Math.floor(upgradeCost * 1.7);
-        localStorage.setItem('coins', coins);
-        localStorage.setItem('power', power);
-        localStorage.setItem('upgradeCost', upgradeCost);
+      // Tap logic
+      window.earnFragments = function() {
+        fragments += power;
+        localStorage.setItem('fragments', fragments);
         updateUI();
         updateLeaderboard();
-      } else {
-        alert('Not enough coins!');
       }
-    }
+      window.buyUpgrade = function() {
+        if (fragments >= upgradeCost) {
+          fragments -= upgradeCost;
+          power += 1;
+          upgradeCost = Math.floor(upgradeCost * 1.7);
+          localStorage.setItem('fragments', fragments);
+          localStorage.setItem('power', power);
+          localStorage.setItem('upgradeCost', upgradeCost);
+          updateUI();
+          updateLeaderboard();
+        } else {
+          alert('Not enough fragments!');
+        }
+      }
 
-    function copyRefLink() {
-      const refInput = document.getElementById('ref-link');
-      refInput.select();
-      refInput.setSelectionRange(0, 99999); // For mobile
-      document.execCommand('copy');
-      const msg = document.getElementById('copy-msg');
-      msg.style.display = 'block';
-      setTimeout(() => { msg.style.display = 'none'; }, 1500);
-    }
+      // Converter logic
+      window.convertFragments = function() {
+        const input = document.getElementById('convert-amount');
+        const result = document.getElementById('convert-result');
+        let amount = parseInt(input.value);
+        if (isNaN(amount) || amount < 100 || amount % 100 !== 0) {
+          result.textContent = 'Enter a valid amount (multiples of 100)';
+          return;
+        }
+        if (fragments < amount) {
+          result.textContent = 'Not enough fragments!';
+          return;
+        }
+        let gemsToAdd = amount / 100;
+        fragments -= amount;
+        gems += gemsToAdd;
+        localStorage.setItem('fragments', fragments);
+        localStorage.setItem('gems', gems);
+        updateUI();
+        document.getElementById('gems').textContent = gems;
+        result.textContent = `Converted ${amount} fragments to ${gemsToAdd} gems!`;
+        input.value = '';
+        updateLeaderboard();
+      }
 
-    // Initial UI and leaderboard
-    updateUI();
-    updateLeaderboard();
+      // Refer logic
+      window.copyRefLink = function() {
+        const refInput = document.getElementById('ref-link');
+        refInput.select();
+        refInput.setSelectionRange(0, 99999); // For mobile
+        document.execCommand('copy');
+        const msg = document.getElementById('copy-msg');
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; }, 1500);
+      }
 
-    // Navigation logic
-    const navSections = {
-      'nav-tap': 'section-tap',
-      'nav-leaderboard': 'section-leaderboard',
-      'nav-refer': 'section-refer',
-      'nav-tasks': 'section-tasks',
-    };
-    Object.keys(navSections).forEach(navId => {
-      document.getElementById(navId).addEventListener('click', function() {
-        // Hide all sections
-        Object.values(navSections).forEach(secId => {
-          document.getElementById(secId).style.display = 'none';
+      // Show only Tap section by default
+      document.getElementById('section-tap').style.display = '';
+      document.getElementById('section-refer').style.display = 'none';
+      document.getElementById('section-tasks').style.display = 'none';
+      document.getElementById('section-converter').style.display = 'none';
+      document.getElementById('section-shop').style.display = 'none';
+
+      // Navigation logic
+      const navSections = {
+        'nav-tap': 'section-tap',
+        'nav-shop': 'section-shop',
+        'nav-refer': 'section-refer',
+        'nav-tasks': 'section-tasks',
+        'nav-converter': 'section-converter',
+      };
+      Object.keys(navSections).forEach(navId => {
+        document.getElementById(navId).addEventListener('click', function() {
+          // Hide all sections
+          Object.values(navSections).forEach(secId => {
+            document.getElementById(secId).style.display = 'none';
+          });
+          // Hide leaderboard overlay if open
+          document.getElementById('leaderboard-overlay').style.display = 'none';
+          // Remove active from all nav buttons
+          document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active'));
+          // Show selected section
+          document.getElementById(navSections[navId]).style.display = '';
+          // Highlight active nav
+          this.classList.add('nav-active');
         });
-        // Remove active from all nav buttons
-        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active'));
-        // Show selected section
-        document.getElementById(navSections[navId]).style.display = '';
-        // Highlight active nav
-        this.classList.add('nav-active');
       });
+
+      // Leaderboard overlay logic
+      var lbBtn = document.getElementById('leaderboard-btn');
+      var lbOverlay = document.getElementById('leaderboard-overlay');
+      var closeLb = document.getElementById('close-leaderboard');
+      if (lbBtn && lbOverlay && closeLb) {
+        lbBtn.onclick = function() {
+          // Always show Tap section and highlight Tap nav
+          Object.values(navSections).forEach(secId => {
+            document.getElementById(secId).style.display = 'none';
+          });
+          document.getElementById('section-tap').style.display = '';
+          document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active'));
+          document.getElementById('nav-tap').classList.add('nav-active');
+          // Show overlay
+          lbOverlay.style.display = 'flex';
+          // Copy leaderboard to overlay
+          const scores = JSON.parse(localStorage.getItem('localLeaderboard') || '[]');
+          const lb = document.getElementById('leaderboard-overlay-list');
+          lb.innerHTML = '';
+          scores.forEach((s, i) => {
+            lb.innerHTML += `<li>${s.username}: ${s.score}</li>`;
+          });
+        };
+        closeLb.onclick = function() {
+          lbOverlay.style.display = 'none';
+        };
+      }
+
+      // Initial UI and leaderboard
+      updateUI();
+      updateLeaderboard();
     });
   </script>
 </body>
