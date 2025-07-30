@@ -129,8 +129,8 @@
       filter: brightness(1.1) drop-shadow(0 0 8px #ffe082);
     }
     .coin-img {
-      width: 120px;
-      height: 120px;
+      width: 180px;
+      height: 180px;
       border-radius: 50%;
       object-fit: cover;
       box-shadow: 0 2px 8px rgba(44, 62, 80, 0.10);
@@ -175,8 +175,8 @@
       justify-content: center;
     }
     .nav-btn .nav-coin {
-      width: 28px;
-      height: 28px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       object-fit: cover;
       box-shadow: 0 1px 4px rgba(44,62,80,0.10);
@@ -219,9 +219,9 @@
         <div id="level-progress" style="height: 100%; background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%); border-radius: 8px; width: 0%; transition: width 0.3s;"></div>
       </div>
       <button class="tap-img-btn" onclick="earnFragments()" aria-label="Tap to earn fragments">
-        <img src="world-turtle-coin.png" alt="World Turtle Fragment" class="coin-img" />
+        <img src="turtle.png" alt="World Turtle Fragment" class="coin-img" />
       </button>
-      <button class="upgrade" onclick="buyUpgrade()">Upgrade (+1 per tap) - Cost: <span id="upgrade-cost">10</span></button>
+      <button class="upgrade" onclick="buyUpgrade()">Upgrade (+4 per tap) - Cost: <span id="upgrade-cost">10</span></button>
       <div class="upgrade-info">Current Power: <span id="power">1</span> fragments/tap</div>
       <!-- Leaderboard card removed from here -->
     </div>
@@ -240,6 +240,7 @@
         <button onclick="copyRefLink()" style="margin-left: 8px; padding: 8px 16px; border-radius: 8px; border: none; background: #2e8b57; color: #fff; font-size: 1rem; cursor: pointer;">Copy</button>
       </div>
       <div id="copy-msg" style="color: #388e3c; font-size: 0.95rem; display: none;">Referral link copied!</div>
+      <div id="referral-reward-msg" style="color: #388e3c; font-size: 1rem; margin-top: 10px; display: none;"></div>
     </div>
     <div id="section-tasks" style="display:none;">
       <h2 style="color:#388e3c;">Tasks</h2>
@@ -247,35 +248,16 @@
     </div>
     <div id="section-converter" style="display:none;">
       <h2 style="color:#1976d2;">Converter</h2>
-      <p>Convert your fragments to gems! (100 fragments = 1 gem)</p>
-      <div style="margin: 16px 0;">
-        <input id="convert-amount" type="number" min="100" step="100" placeholder="Enter fragments" style="width: 60%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem;" />
-        <button onclick="convertFragments()" style="margin-left: 8px; padding: 8px 16px; border-radius: 8px; border: none; background: #1976d2; color: #fff; font-size: 1rem; cursor: pointer;">Convert</button>
-      </div>
-      <div id="convert-result" style="color: #1976d2; font-size: 1rem; min-height: 1.5em;"></div>
-      <div style="margin-top: 10px; color: #888; font-size: 0.95rem;">You have <span id="gems">0</span> gems.</div>
+      <p style="color:#888; font-size:1.1rem; margin:32px 0;">Coming soon!</p>
     </div>
     <div id="section-shop" style="display:none;">
       <h2 style="color:#4caf50;">Shop</h2>
-      <div style="margin: 18px 0;">
-        <div style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(44,62,80,0.07); display:flex; align-items:center; justify-content:space-between;">
-          <span>Buy 1,000 Fragments</span>
-          <button style="background:#43e97b; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:1rem; cursor:pointer;">Buy</button>
-        </div>
-        <div style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(44,62,80,0.07); display:flex; align-items:center; justify-content:space-between;">
-          <span>Buy 1 Gem</span>
-          <button style="background:#1976d2; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:1rem; cursor:pointer;">Buy</button>
-        </div>
-        <div style="background:#fff; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(44,62,80,0.07); display:flex; align-items:center; justify-content:space-between;">
-          <span>Buy 10 Gems</span>
-          <button style="background:#1976d2; color:#fff; border:none; border-radius:8px; padding:8px 18px; font-size:1rem; cursor:pointer;">Buy</button>
-        </div>
-      </div>
+      <p style="color:#888; font-size:1.1rem; margin:32px 0;">Coming soon!</p>
     </div>
   </div>
   <nav class="bottom-nav">
     <button class="nav-btn nav-active" id="nav-tap" aria-label="Tap">
-      <span class="nav-icon"><img src="world-turtle-coin.png" alt="Tap" class="nav-coin" /></span>
+      <span class="nav-icon"><img src="turtle.png" alt="Tap" class="nav-coin" /></span>
       <span class="nav-label">Tap</span>
     </button>
     <button class="nav-btn" id="nav-shop" aria-label="Shop">
@@ -306,6 +288,7 @@
       let power = parseInt(localStorage.getItem('power') || '1');
       let upgradeCost = parseInt(localStorage.getItem('upgradeCost') || '10');
       let gems = parseInt(localStorage.getItem('gems') || '0');
+      let totalFragments = parseInt(localStorage.getItem('totalFragments') || '0');
 
       function updateUI() {
         document.getElementById('fragments').textContent = `Fragments: ${fragments}`;
@@ -316,7 +299,7 @@
         let level = 0;
         let req = 10000;
         let nextReq = req;
-        let f = fragments;
+        let f = totalFragments;
         while (f >= req) {
           level++;
           f -= req;
@@ -350,14 +333,16 @@
       // Tap logic
       window.earnFragments = function() {
         fragments += power;
+        totalFragments += power;
         localStorage.setItem('fragments', fragments);
+        localStorage.setItem('totalFragments', totalFragments);
         updateUI();
         updateLeaderboard();
       }
       window.buyUpgrade = function() {
         if (fragments >= upgradeCost) {
           fragments -= upgradeCost;
-          power += 1;
+          power += 4;
           upgradeCost = Math.floor(upgradeCost * 1.7);
           localStorage.setItem('fragments', fragments);
           localStorage.setItem('power', power);
@@ -403,6 +388,28 @@
         const msg = document.getElementById('copy-msg');
         msg.style.display = 'block';
         setTimeout(() => { msg.style.display = 'none'; }, 1500);
+      }
+
+      // Referral reward logic
+      function getQueryParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+      }
+      const refUser = getQueryParam('ref');
+      if (refUser && !localStorage.getItem('referralRewarded')) {
+        fragments += 500;
+        totalFragments += 500;
+        localStorage.setItem('fragments', fragments);
+        localStorage.setItem('totalFragments', totalFragments);
+        localStorage.setItem('referralRewarded', 'yes');
+        // Show message in Refer section
+        document.getElementById('referral-reward-msg').style.display = 'block';
+        document.getElementById('referral-reward-msg').textContent = 'You received 500 fragments for using a referral link!';
+        updateUI();
+        updateLeaderboard();
+      } else if (localStorage.getItem('referralRewarded')) {
+        document.getElementById('referral-reward-msg').style.display = 'block';
+        document.getElementById('referral-reward-msg').textContent = 'Referral reward already claimed.';
       }
 
       // Show only Tap section by default
