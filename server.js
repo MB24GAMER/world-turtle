@@ -4,6 +4,7 @@ const admin = require('firebase-admin');
 require('dotenv').config();
 const serviceAccount = JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS);
 const { v4: uuidv4 } = require('uuid');
+const bot = require('./bot');
 
 const app = express();
 const PORT = 3000;
@@ -140,6 +141,89 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
+// Add a new task
+app.post('/api/tasks', async (req, res) => {
+  const { title } = req.body;
+  if (!title) return res.status(400).json({ error: 'Title is required' });
+  try {
+    const taskRef = await db.collection('tasks').add({ title });
+    res.json({ id: taskRef.id, title });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add task' });
+  }
+});
+
+// Get all tasks
+app.get('/api/tasks', async (req, res) => {
+  try {
+    const snapshot = await db.collection('tasks').get();
+    const tasks = [];
+    snapshot.forEach(doc => tasks.push({ id: doc.id, ...doc.data() }));
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
+});
+
+// Delete a task
+app.delete('/api/tasks/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+  try {
+    await db.collection('tasks').doc(taskId).delete();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
+});
+
+// Get all users (for admin panel)
+app.get('/api/users', async (req, res) => {
+  try {
+    const snapshot = await db.collection('users').get();
+    const users = [];
+    snapshot.forEach(doc => {
+      const userData = doc.data();
+      users.push({
+        id: doc.id,
+        username: userData.username,
+        level: userData.level || 0,
+        tasksDone: userData.tasksDone || 0,
+        referrals: userData.referrals || [],
+        referralLink: userData.referralLink
+      });
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Get user statistics (for admin panel)
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const usersSnapshot = await db.collection('users').get();
+    const tasksSnapshot = await db.collection('tasks').get();
+    
+    const totalUsers = usersSnapshot.size;
+    const totalTasks = tasksSnapshot.size;
+    
+    // Calculate total referrals
+    let totalReferrals = 0;
+    usersSnapshot.forEach(doc => {
+      const userData = doc.data();
+      totalReferrals += (userData.referrals || []).length;
+    });
+    
+    res.json({
+      totalUsers,
+      totalTasks,
+      totalReferrals
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api/')) {
     res.sendFile(__dirname + '/index.html');
@@ -150,4 +234,5 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Leaderboard server running on http://localhost:${PORT}`);
+  console.log('Telegram bot is also running...');
 }); 
